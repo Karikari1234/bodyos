@@ -18,6 +18,14 @@ Hosted free on GitHub Pages, installed via Safari "Add to Home Screen". No Xcode
   (OpenRouter, local Ollama at http://localhost:11434/v1). DeepSeek has no vision API.
 - Reminders: iOS PWAs cannot schedule local notifications, so the app exports an .ics calendar file.
 
+## Data safety (read before changing saved data)
+- All user data is one JSON blob in localStorage under `bodyos.v1`, tied to the origin karikari1234.github.io.
+  Deploys never touch it. Deleting the home-screen app, changing the hosting origin, or iOS storage pressure can.
+- `navigator.storage.persist()` is requested at startup to reduce eviction risk.
+- Any change to the shape of saved data MUST keep old data readable: add a migration in `load()` that upgrades
+  the old shape (or bump to `bodyos.v2` and convert from v1 once). Never rename/drop fields without one.
+- Export/Import (Me tab) is the user's backup; keep Import accepting older export files.
+
 ## Status
 See git log. 15/15 logic tests pass; full UI flow verified in browser.
 - Local AI tested: qwen3.5:2b via Ollama, ~4 s with `reasoning_effort:'none'` (auto-sent when base URL has :11434;

@@ -593,4 +593,6 @@ function download(name, text, type) {
 // re-render when app comes back (date may have changed, rest timer)
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js');
+// ask the OS not to evict our data under storage pressure; best effort, unsupported browsers just skip
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 render();
