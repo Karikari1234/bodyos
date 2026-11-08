@@ -35,9 +35,10 @@ const fmtDate = k => new Date(k + 'T12:00').toLocaleDateString(undefined, { day:
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
-function openSheet(html) { $('#sheet .sheet-body').innerHTML = html; $('#sheet').hidden = false; }
+function openSheet(html) { $('#sheet .sheet-body').innerHTML = `<div class="sheet-top"><button class="sheet-close" aria-label="Close" onclick="closeSheet()">×</button></div>` + html; $('#sheet').hidden = false; $('#sheet .sheet-body').scrollTop = 0; }
 function closeSheet() { $('#sheet').hidden = true; }
 $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
 
 function currentKg() {
   const s = L.trend(S.weights);
@@ -420,23 +421,27 @@ function workoutView() {
     const left = Math.max(0, Math.ceil((W.rest - Date.now()) / 1000));
     $('#view').innerHTML = `<p class="muted" style="margin-top:24px">Rest</p><div class="timer" id="tm">${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}</div>
       <p class="muted" style="text-align:center">Next: ${esc(spec.n)} · set ${it.sets.length + 1} of ${L.SETS}</p>
-      <div class="row"><button class="btn ghost" id="add15">+15 s</button><button class="btn orange" id="skip">Go</button></div>`;
+      <div class="row"><button class="btn ghost" id="add15">+15 s</button><button class="btn orange" id="skip">Go</button></div>
+      <div class="row" style="margin-top:10px">${it.sets.length ? '<button class="btn ghost" id="undo">Undo last set</button>' : ''}<button class="btn ghost" id="quit">End workout</button></div>`;
+    if ($('#undo')) $('#undo').onclick = () => { W.cur = it.sets.pop(); W.rest = null; render(); };
+    $('#quit').onclick = quitWorkout;
     $('#add15').onclick = () => { W.rest += 15000; render(); };
     $('#skip').onclick = () => { W.rest = null; render(); };
     clearTimeout(W.tick); W.tick = setTimeout(() => { if (tab === 'workout' && W && W.rest) { if (Date.now() >= W.rest) { W.rest = null; navigator.vibrate && navigator.vibrate(300); } render(); } }, 500);
     return;
   }
-  $('#view').innerHTML = `<div class="row between" style="margin-top:18px"><span class="muted small">Move ${W.i + 1} of ${W.items.length} · level ${it.level}</span><button class="btn sm ghost" id="quit">End</button></div>
+  $('#view').innerHTML = `<div class="row between" style="margin-top:18px"><span class="muted small">Move ${W.i + 1} of ${W.items.length} · level ${it.level}</span><button class="btn sm ghost" id="quit">End workout</button></div>
     <h1>${esc(spec.n)}</h1><p class="muted">Set ${it.sets.length + 1} of ${L.SETS} · target ${repLabel(spec)}</p>
     <div class="card"><ol class="small" style="margin:0;padding-left:18px">${spec.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol></div>
     <p class="muted small" style="text-align:center">${spec.type === 'secs' ? 'Seconds held' : spec.type === 'each' ? 'Reps per side' : 'Reps done'} (good form only)</p>
     <div class="stepper"><button id="dn">−</button><span id="cv">${W.cur}</span><button id="up">+</button></div>
     <label style="display:flex;gap:10px;color:#F3EEE8;margin:18px 0"><input type="checkbox" id="pain" ${it.pain ? 'checked' : ''} style="width:auto"> Sharp or joint pain (not muscle burn) — stop this move</label>
     <button class="btn orange" id="done">Set done</button>
-    ${it.sets.length ? `<p class="muted small" style="text-align:center">Done: ${it.sets.join(' / ')}</p>` : ''}`;
+    ${it.sets.length ? `<p class="muted small" style="text-align:center">Done: ${it.sets.join(' / ')} · <a href="#" id="undo" style="color:inherit">undo last</a></p>` : ''}`;
+  if ($('#undo')) $('#undo').onclick = e => { e.preventDefault(); W.cur = it.sets.pop(); render(); };
   $('#dn').onclick = () => { W.cur = Math.max(0, W.cur - step); $('#cv').textContent = W.cur; };
   $('#up').onclick = () => { W.cur = Math.min(300, W.cur + step); $('#cv').textContent = W.cur; };
-  $('#quit').onclick = () => { if (confirm(W.items.some(i => i.sets.length) ? 'End workout and save sets done so far?' : 'Leave workout?')) finishWorkout(); };
+  $('#quit').onclick = quitWorkout;
   $('#pain').onchange = e => { it.pain = e.target.checked; };
   $('#done').onclick = () => {
     if (it.pain) { nextMove(); return; }
@@ -444,6 +449,7 @@ function workoutView() {
     if (it.sets.length >= L.SETS) nextMove(); else { W.rest = Date.now() + 75000; render(); }
   };
 }
+function quitWorkout() { if (confirm(W.items.some(i => i.sets.length) ? 'End workout and save sets done so far?' : 'Leave workout?')) finishWorkout(); }
 function nextMove() {
   if (W.i + 1 >= W.items.length) return finishWorkout();
   W.i++;
