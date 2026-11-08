@@ -96,6 +96,7 @@ test('parseAIFood validates and cleans', () => {
   assert.equal(r.items[1].p, 0);
   assert.equal(r.confidence, 'medium');
   assert.equal(L.parseAIFood('{"items":[{"name":"a","kcal":1}],"confidence":"sure"}').confidence, 'low');
+  assert.equal(L.parseAIFood('<think>maybe {x}</think>{"items":[{"name":"a","kcal":5}]}').items[0].kcal, 5);
   assert.throws(() => L.parseAIFood('sorry'));
   assert.throws(() => L.parseAIFood('{"items":[]}'));
 });

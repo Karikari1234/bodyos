@@ -128,7 +128,7 @@
 
   // Validate model output. Returns { items, confidence, notes } or throws.
   function parseAIFood(text) {
-    let s = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    let s = String(text || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
     const a = s.indexOf('{'), b = s.lastIndexOf('}');
     if (a < 0 || b < a) throw new Error('No JSON in AI reply');
     const obj = JSON.parse(s.slice(a, b + 1));

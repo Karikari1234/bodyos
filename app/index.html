@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BodyOS">
+<meta name="theme-color" content="#F6F3EF">
+<title>BodyOS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<main id="view"></main>
+<nav id="tabs">
+  <button data-tab="home">Home</button>
+  <button data-tab="train">Train</button>
+  <button data-tab="log" class="plus" aria-label="Log">+</button>
+  <button data-tab="progress">Progress</button>
+  <button data-tab="me">Me</button>
+</nav>
+<div id="sheet" hidden><div class="sheet-body"></div></div>
+<div id="toast" hidden></div>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
