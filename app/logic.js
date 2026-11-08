@@ -129,8 +129,16 @@
   // Validate model output. Returns { items, confidence, notes } or throws.
   function parseAIFood(text) {
     let s = String(text || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-    const a = s.indexOf('{'), b = s.lastIndexOf('}');
-    if (a < 0 || b < a) throw new Error('No JSON in AI reply');
+    // first balanced {...}, string-aware: models sometimes append junk after the JSON
+    const a = s.indexOf('{'); let b = -1;
+    for (let i = a, d = 0, q = false; a >= 0 && i < s.length; i++) {
+      const ch = s[i];
+      if (q) { if (ch === '\\') i++; else if (ch === '"') q = false; }
+      else if (ch === '"') q = true;
+      else if (ch === '{') d++;
+      else if (ch === '}' && --d === 0) { b = i; break; }
+    }
+    if (b < 0) throw new Error('No JSON in AI reply');
     const obj = JSON.parse(s.slice(a, b + 1));
     if (!Array.isArray(obj.items) || !obj.items.length) throw new Error('AI found no food');
     const num = (v, max) => { const n = Number(v); if (!isFinite(n) || n < 0) return 0; return Math.min(n, max); };

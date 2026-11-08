@@ -24,4 +24,8 @@ See git log. 15/15 logic tests pass; full UI flow verified in browser.
   with thinking on it hit the 90 s timeout). Output parsed fine but was inaccurate (rice 200 g = 340 kcal, macros
   summed to 263 -> app flags mismatch). Small local models are not trustworthy; use Gemini Flash-Lite for real use.
 - Ollama on the Mac is not reachable from the iPhone PWA (localhost = phone).
-- Pending: test with a real Gemini/OpenRouter key when the user provides one.
+- Gemini 2.5 Flash-Lite tested with user's key: ~2-3 s. Rice 200 g = 262 kcal (USDA ~260), 2 eggs + bread = 235 (~231).
+  Found + fixed: model appended junk after JSON (parser now takes first balanced object); model listed
+  "2 eggs" as two items each with the 2-egg total (prompt now says one item per food, totals, never repeat).
+- `gemini-3.8-flash-lite` does not exist; the app shows the API's "model not found" error.
+- Not tested: real camera photo through the UI sheet (tests used a blank image + text hint).

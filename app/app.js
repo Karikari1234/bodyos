@@ -287,6 +287,7 @@ function addFood(items) {
 // ---------- food AI ----------
 const AI_PROMPT = `You are a careful nutrition estimator. Identify each distinct food or drink in the photo and estimate the portion in grams and its nutrition.
 Use standard food composition values (USDA FoodData Central style). Count visible cooking oil, butter and sauces. If unsure, say so with confidence "low" rather than guessing wildly.
+List each food once. If there are several of the same food (e.g. 2 eggs), use ONE item named with the count ("2 boiled eggs") whose grams and nutrition are the total for all of them. Never repeat an item.
 Reply with JSON only, no other text:
 {"items":[{"name":"string","grams":number,"kcal":number,"protein_g":number,"carbs_g":number,"fat_g":number}],"confidence":"low|medium|high","notes":"short string"}`;
 
