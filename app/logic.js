@@ -258,11 +258,33 @@
     return L.join('\r\n') + '\r\n';
   }
 
+  // Month-by-month roadmap: weight checkpoint from the plan line plus habit focus for that phase.
+  const PHASES = [
+    { name: 'Foundations', eat: ['Log every meal, even rough guesses', 'Protein at every meal', 'Water goal daily'], move: ['Walk 20–30 min every day', 'Hit your step goal 5 of 7 days'], train: ['2 workouts a week at levels 1–2', 'Learn the form, not the burn'] },
+    { name: 'Build the habit', eat: ['Half the plate vegetables at lunch and dinner', 'Plan tomorrow’s food the night before', 'Swap one sugary drink a day for water'], move: ['10 min walk after your two biggest meals', 'Step goal climbs on its own as you hit it'], train: ['Never miss a workout twice in a row', 'Expect your first level-ups'] },
+    { name: 'Get stronger', eat: ['Hit the protein target 6 of 7 days', 'Cook at home most days'], move: ['One long walk (45–60 min) each week', 'Take stairs when you can'], train: ['Push each move to the top of its rep range', 'Aim for level 3 on squat and push'] },
+    { name: 'Momentum', eat: ['Same calories — the plan updates as you lose', 'Eat out at most twice a week, log it anyway'], move: ['Aim for 10,000 steps a day', 'Add a brisk hill or stairs walk once a week'], train: ['Level up wherever you can', 'Add a 3rd workout day if recovery is good'] },
+    { name: 'Final stretch', eat: ['Stay consistent — plateaus of 1–2 weeks are normal', 'Do not cut calories below the plan'], move: ['Keep 10,000 steps', 'Two long walks a week'], train: ['Keep training — it protects muscle while you lose fat'] },
+  ];
+  const MAINTAIN = { name: 'Maintain', eat: ['Add about 200 kcal a day for 2 weeks, then check the trend', 'Keep high protein and weekly weigh-in average'], move: ['Keep your step habit'], train: ['Keep 2–3 workouts a week and keep climbing levels'] };
+  function roadmap(startKey, startKg, goalKg, paceKgMonth) {
+    const end = goalDate(startKey, startKg, goalKg, paceKgMonth);
+    if (!end) return [];
+    const n = Math.max(1, Math.round(daysBetween(startKey, end) / DAYS_PER_MONTH)) // goalDate rounds days up, so ceil would add a stray extra month;
+    const out = [];
+    for (let i = 1; i <= n; i++) {
+      const date = i === n ? end : addDays(startKey, Math.round(i * DAYS_PER_MONTH));
+      out.push({ month: i, from: i === 1 ? startKey : out[i - 2].date, date, kg: Math.round(planWeight(startKey, startKg, goalKg, paceKgMonth, date) * 10) / 10, ...PHASES[i === n && n > 1 ? PHASES.length - 1 : Math.min(i - 1, PHASES.length - 2)] }); // last month is always the final stretch
+    }
+    out.push({ month: n + 1, from: end, date: null, kg: goalKg, ...MAINTAIN });
+    return out;
+  }
+
   const api = {
     KCAL_PER_KG, DAYS_PER_MONTH, ACTIVITY, LADDERS, PATTERNS, SETS,
     dayKey, daysBetween, addDays, weekday, bmr, targets, bmi, goalDate, planWeight,
     trend, weeklyRate, streak, nextStepGoal, macroKcal, macroMismatch, sumFood, parseAIFood,
-    progression, weekReview, ics,
+    progression, weekReview, ics, roadmap,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.L = api;
 })(this);

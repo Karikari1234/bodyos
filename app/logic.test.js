@@ -146,3 +146,16 @@ test('ics output', () => {
   assert.match(t, /RRULE:FREQ=DAILY/);
   assert.ok(t.split('\r\n').filter(l => l === 'BEGIN:VEVENT').length === 2);
 });
+
+test('roadmap', () => {
+  const r = L.roadmap('2026-11-08', 82, 70, 2.5);
+  assert.equal(r.length, 6);                       // 147 days = 5 months + maintain
+  assert.deepEqual(r.map(m => m.name), ['Foundations', 'Build the habit', 'Get stronger', 'Momentum', 'Final stretch', 'Maintain']);
+  assert.equal(r[0].kg, 79.5);                     // 82 - 2.5 after one month
+  assert.equal(r[4].date, '2027-04-04');           // last checkpoint = goal date
+  assert.equal(r[4].kg, 70);
+  assert.equal(r[1].from, r[0].date);
+  assert.equal(L.roadmap('2026-11-08', 82, 80, 2.5).map(m => m.name).join(), 'Foundations,Maintain');
+  assert.deepEqual(L.roadmap('2026-11-08', 82, 70, 0), []);
+  assert.equal(L.roadmap('2026-11-08', 90, 70, 2).length, 11); // long plan repeats Momentum then Final stretch
+});

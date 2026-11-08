@@ -6,7 +6,10 @@ Hosted free on GitHub Pages, installed via Safari "Add to Home Screen". No Xcode
 ## Layout
 - `design/screens.html` — static mockups (style reference).
 - `app/logic.js` — all formulas, ladders, progression, parsing. Pure, tested.
+- `app/figures.js` — animated stick figure per ladder level (`figure(pattern, level)`), two poses A/B per level, SMIL loop, static when reduce-motion. Shown in train cards, ladder sheet, workout screen.
+- Roadmap: `L.roadmap()` in logic.js (monthly weight checkpoints + eat/move/train focus), shown on Progress.
 - `app/logic.test.js` — `node --test app/logic.test.js`
+- Adding an app file: list it in `FILES` in `sw.js` and bump `VERSION`.
 - `app/index.html`, `app/app.js`, `app/app.css`, `app/sw.js`, `app/manifest.webmanifest` — the PWA.
 
 ## Decisions

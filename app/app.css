@@ -62,3 +62,17 @@ html:has(body.dark) { background: var(--dark); }
 .sheet-top { position: sticky; top: -20px; height: 0; z-index: 2; display: flex; justify-content: flex-end; }
 .sheet-close { margin-top: -8px; width: 38px; height: 38px; flex: none; border-radius: 50%; border: 0; background: var(--line); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 .sheet-body h2:first-of-type { padding-right: 44px; }
+.fig { display: block; width: 100%; max-width: 280px; height: auto; margin: 4px auto 8px; }
+.fig-floor { stroke: var(--line); stroke-width: 2; }
+.fig-prop { fill: none; stroke: var(--muted); stroke-width: 3; stroke-linejoin: round; opacity: .55; }
+.fig-body line { stroke: var(--orange-d); stroke-width: 5; stroke-linecap: round; }
+.fig-body line.fig-far { opacity: .45; }
+.fig-body circle { fill: var(--orange-d); }
+body.dark .fig-floor { stroke: #3A3632; }
+.road { position: relative; padding-left: 22px; }
+.road::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+.road > div { position: relative; padding: 0 0 16px; }
+.road > div::before { content: ""; position: absolute; left: -21px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); border: 2px solid var(--line); }
+.road > div.done::before { background: var(--good); border-color: var(--good); }
+.road > div.now::before { background: var(--orange-d); border-color: var(--orange-d); }
+.road ul { margin: 4px 0 0; padding-left: 16px; }

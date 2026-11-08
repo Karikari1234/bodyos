@@ -385,8 +385,8 @@ function trainView() {
   <button class="btn orange" id="startW">Start workout</button>
   ${L.PATTERNS.map(p => {
     const nl = nextLevel(p), lv = L.LADDERS[p].levels[nl.level - 1];
-    return `<div class="card" data-learn="${p}"><div class="row between"><div><div class="muted small">${L.LADDERS[p].name} · level ${nl.level}/6</div><h2 style="margin:2px 0">${esc(lv.n)}</h2><div class="small">${SETS()} × ${repLabel(lv)}</div></div>
-      ${nl.reason === 'up' ? '<span class="pill">Level up!</span>' : nl.reason === 'pain' ? '<span class="pill">Eased off</span>' : ''}</div></div>`;
+    return `<div class="card" data-learn="${p}"><div class="row between"><div><div class="muted small">${L.LADDERS[p].name} · level ${nl.level}/6</div><h2 style="margin:2px 0">${esc(lv.n)}</h2><div class="small">${SETS()} × ${repLabel(lv)}</div>
+      ${nl.reason === 'up' ? '<span class="pill">Level up!</span>' : nl.reason === 'pain' ? '<span class="pill">Eased off</span>' : ''}</div><div style="width:120px;flex:none">${figure(p, nl.level)}</div></div></div>`;
   }).join('')}
   <div class="card small"><h3>How you level up</h3><p class="muted" style="margin:0">Hit the top of the range on all 3 sets in two workouts in a row → next level. Felt pain (not muscle burn) → drop a level. Warm up first: 2 min marching on the spot + 10 arm circles.</p></div>
   <div class="card"><h2>History</h2><div class="list">${S.sessions.slice(-8).reverse().map(s => `<div><b>${fmtDate(s.date)}</b><div class="muted small">${s.items.map(i => `${L.LADDERS[i.pattern].levels[i.level - 1].n} ${i.sets.join('/')}${i.pain ? ' ⚠︎' : ''}`).join(' · ')}</div></div>`).join('') || '<p class="muted small">No workouts yet.</p>'}</div></div>`;
@@ -397,7 +397,7 @@ function SETS() { return L.SETS; }
 function learnSheet(p) {
   const nl = nextLevel(p);
   openSheet(`<h2>${L.LADDERS[p].name} ladder</h2>${L.LADDERS[p].levels.map((l, i) => `<div class="card" style="${i + 1 === nl.level ? 'outline:2px solid var(--orange-d)' : ''}">
-    <div class="muted small">Level ${i + 1} · ${repLabel(l)}</div><h3>${esc(l.n)}</h3><ol class="small" style="margin:0;padding-left:18px">${l.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol>
+    <div class="muted small">Level ${i + 1} · ${repLabel(l)}</div><h3>${esc(l.n)}</h3>${figure(p, i + 1)}<ol class="small" style="margin:0;padding-left:18px">${l.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol>
     ${i + 1 !== nl.level ? `<button class="btn sm ghost" style="margin-top:8px" data-set="${i + 1}">Use this level</button>` : ''}</div>`).join('')}`);
   document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
     const lv = +b.dataset.set;
@@ -432,6 +432,7 @@ function workoutView() {
   }
   $('#view').innerHTML = `<div class="row between" style="margin-top:18px"><span class="muted small">Move ${W.i + 1} of ${W.items.length} · level ${it.level}</span><button class="btn sm ghost" id="quit">End workout</button></div>
     <h1>${esc(spec.n)}</h1><p class="muted">Set ${it.sets.length + 1} of ${L.SETS} · target ${repLabel(spec)}</p>
+    ${figure(it.pattern, it.level)}
     <div class="card"><ol class="small" style="margin:0;padding-left:18px">${spec.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol></div>
     <p class="muted small" style="text-align:center">${spec.type === 'secs' ? 'Seconds held' : spec.type === 'each' ? 'Reps per side' : 'Reps done'} (good form only)</p>
     <div class="stepper"><button id="dn">−</button><span id="cv">${W.cur}</span><button id="up">+</button></div>
@@ -500,6 +501,7 @@ function progressView() {
     ${chart()}
     <p class="small">${rate === null ? 'Log weight for 7+ days to see your real pace.' : `Real pace: <b>${rate > 0 ? '+' : ''}${rate} kg/week</b>${rate > 0.05 ? ' (gaining)' : ''}. ${est ? `At this pace: goal around <b>${fmtDate(est)}</b>.` : ''}`}
     ${rate !== null && rate < -(p.startKg * 0.01) ? '<br><span class="warn">Losing faster than 1% body weight per week — consider eating a bit more.</span>' : ''}</p></div>
+  ${roadmapCard(p, t, tk)}
   <div class="card"><h2>Last 7 days</h2>
     <div class="list small">
       <div class="row between"><span>Average kcal</span><b>${wr.kcalAvg ?? '—'} ${wr.kcalAvg ? `/ ${tg.kcal}` : ''}</b></div>
@@ -511,6 +513,17 @@ function progressView() {
     </div>
     <p class="small muted">${reviewTip(wr, tg)}</p></div>
   <div class="card"><h2>Weigh-ins</h2><div class="list small">${series.slice(-10).reverse().map(s => `<div class="row between"><span>${fmtDate(s.date)}</span><span>${s.kg} kg <span class="muted">· trend ${s.trend.toFixed(1)}</span></span></div>`).join('')}</div></div>`;
+}
+function roadmapCard(p, t, tk) {
+  const r = L.roadmap(p.start, p.startKg, p.goalKg, p.pace);
+  if (!r.length) return '';
+  const li = a => a.map(x => `<li>${esc(x)}</li>`).join('');
+  return `<div class="card"><h2>Roadmap</h2><p class="muted small" style="margin-top:0">${p.startKg} → ${p.goalKg} kg at ${p.pace} kg/month. Each month has a weight checkpoint and a focus for eating, walking and training.</p><div class="road">${r.map(m => {
+    const st = m.date && m.date <= t ? 'done' : m.from <= t ? 'now' : '';
+    return `<div class="${st}"><div class="row between"><b>${m.date ? `Month ${m.month} · ${esc(m.name)}` : esc(m.name)}</b><span class="small muted" style="white-space:nowrap">${m.date ? `${fmtDate(m.date)} · ${m.kg} kg` : `from ${fmtDate(m.from)}`}</span></div>
+      ${st === 'now' && m.date ? `<div class="small">Now: trend ${tk.toFixed(1)} kg · checkpoint ${m.kg} kg</div>` : ''}
+      ${st === 'done' ? '' : `<div class="small"><b>Eat</b><ul>${li(m.eat)}</ul><b>Move</b><ul>${li(m.move)}</ul><b>Train</b><ul>${li(m.train)}</ul></div>`}</div>`;
+  }).join('')}</div></div>`;
 }
 function reviewTip(wr, tg) {
   if (wr.foodDays < 4) return 'Tip: log food on at least 5 days so averages mean something.';
