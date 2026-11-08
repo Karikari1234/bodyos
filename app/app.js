@@ -319,7 +319,8 @@ async function callAI(dataUrl, hint) {
     }
     r = await fetch(st.base.replace(/\/$/, '') + '/chat/completions', {
       method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json', ...(st.apiKey ? { Authorization: 'Bearer ' + st.apiKey } : {}) },
-      body: JSON.stringify({ model: st.model, temperature: 0.2, messages: [{ role: 'user', content: [{ type: 'text', text }, { type: 'image_url', image_url: { url: dataUrl } }] }] }),
+      // shortcut: Ollama detected by its default port; thinking makes small local models take minutes
+      body: JSON.stringify({ model: st.model, temperature: 0.2, ...(/:11434\b/.test(st.base) ? { reasoning_effort: 'none' } : {}), messages: [{ role: 'user', content: [{ type: 'text', text }, { type: 'image_url', image_url: { url: dataUrl } }] }] }),
     });
     j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error((j.error && (j.error.message || j.error)) || `HTTP ${r.status}`);
@@ -467,7 +468,7 @@ function chart() {
   const pts = series.filter(s => s.date >= start);
   const span = Math.max(7, L.daysBetween(start, end));
   const plan = [start, end].map(k => L.planWeight(p.start, p.startKg, p.goalKg, p.pace, k < p.start ? p.start : k));
-  const vals = pts.flatMap(s => [s.kg, s.trend]).concat(plan, [p.goalKg]);
+  const vals = pts.flatMap(s => [s.kg, s.trend]).concat(plan);
   const lo = Math.floor(Math.min(...vals) - 0.5), hi = Math.ceil(Math.max(...vals) + 0.5);
   const W_ = 340, H = 180, x = k => 30 + L.daysBetween(start, k) / span * (W_ - 40), y = v => 10 + (hi - v) / (hi - lo) * (H - 30);
   const ps = p.start < start ? start : p.start;

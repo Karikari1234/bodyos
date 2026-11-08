@@ -58,3 +58,4 @@ body.workout #tabs { display: none; }
 .stepper span { font-size: 44px; font-weight: 700; min-width: 80px; text-align: center; }
 svg text { font-family: inherit; }
 .photo-prev { width: 100%; border-radius: 18px; max-height: 260px; object-fit: cover; }
+html:has(body.dark) { background: var(--dark); }

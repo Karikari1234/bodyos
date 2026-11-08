@@ -6,7 +6,7 @@ Hosted free on GitHub Pages, installed via Safari "Add to Home Screen". No Xcode
 ## Layout
 - `design/screens.html` — static mockups (style reference).
 - `app/logic.js` — all formulas, ladders, progression, parsing. Pure, tested.
-- `app/logic.test.js` — `node --test app/`
+- `app/logic.test.js` — `node --test app/logic.test.js`
 - `app/index.html`, `app/app.js`, `app/app.css`, `app/sw.js`, `app/manifest.webmanifest` — the PWA.
 
 ## Decisions
@@ -19,4 +19,9 @@ Hosted free on GitHub Pages, installed via Safari "Add to Home Screen". No Xcode
 - Reminders: iOS PWAs cannot schedule local notifications, so the app exports an .ics calendar file.
 
 ## Status
-See git log. AI inference tested last with local Ollama model once the key is provided.
+See git log. 15/15 logic tests pass; full UI flow verified in browser.
+- Local AI tested: qwen3.5:2b via Ollama, ~4 s with `reasoning_effort:'none'` (auto-sent when base URL has :11434;
+  with thinking on it hit the 90 s timeout). Output parsed fine but was inaccurate (rice 200 g = 340 kcal, macros
+  summed to 263 -> app flags mismatch). Small local models are not trustworthy; use Gemini Flash-Lite for real use.
+- Ollama on the Mac is not reachable from the iPhone PWA (localhost = phone).
+- Pending: test with a real Gemini/OpenRouter key when the user provides one.

@@ -1,4 +1,4 @@
-// Run: node --test app/
+// Run: node --test app/logic.test.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const L = require('./logic.js');
