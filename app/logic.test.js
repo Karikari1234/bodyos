@@ -159,3 +159,9 @@ test('roadmap', () => {
   assert.deepEqual(L.roadmap('2026-11-08', 82, 70, 0), []);
   assert.equal(L.roadmap('2026-11-08', 90, 70, 2).length, 11); // long plan repeats Momentum then Final stretch
 });
+
+test('sleepHours wraps past midnight', () => {
+  assert.equal(L.sleepHours('23:00', '07:00'), 8);
+  assert.equal(L.sleepHours('00:30', '06:45'), 6.3);
+  assert.equal(L.sleepHours('22:15', '22:15'), 0);
+});

@@ -113,6 +113,12 @@
   }
 
   // ---------- food ----------
+  // Hours between bed and wake ('HH:MM'), wrapping past midnight.
+  function sleepHours(bed, wake) {
+    const m = t => { const [h, mi] = t.split(':').map(Number); return h * 60 + mi; };
+    return Math.round(((m(wake) - m(bed) + 1440) % 1440) / 6) / 10;
+  }
+
   function macroKcal(p, c, f) { return 4 * p + 4 * c + 9 * f; }
   // true when stated kcal and macros disagree by more than 15% (and 40 kcal).
   function macroMismatch(kcal, p, c, f) {
@@ -284,7 +290,7 @@
     KCAL_PER_KG, DAYS_PER_MONTH, ACTIVITY, LADDERS, PATTERNS, SETS,
     dayKey, daysBetween, addDays, weekday, bmr, targets, bmi, goalDate, planWeight,
     trend, weeklyRate, streak, nextStepGoal, macroKcal, macroMismatch, sumFood, parseAIFood,
-    progression, weekReview, ics, roadmap,
+    progression, weekReview, ics, roadmap, sleepHours,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.L = api;
 })(this);
