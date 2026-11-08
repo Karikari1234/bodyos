@@ -185,6 +185,8 @@ function homeView() {
     <div class="card" id="stepsCard" style="margin:0"><div class="muted small">Steps</div><div class="big">${d.steps || '—'}</div>${bar(d.steps, S.settings.stepGoal)}<div class="muted small" style="margin-top:6px">goal ${S.settings.stepGoal}</div></div>
     <div class="card" id="weightCard" style="margin:0"><div class="muted small">Weight</div><div class="big">${S.weights[t] ?? '—'}</div><div class="muted small" style="margin-top:6px">trend ${trendKg().toFixed(1)} kg</div></div>
   </div>
+  <div class="card" id="sleepCard"><div class="row between"><h2>Sleep &amp; mood</h2><span class="muted small">${d.sleep ? `${d.sleep.bed} → ${d.sleep.wake}` : 'tap to log'}</span></div>
+    ${d.sleep ? `<div class="big">${L.sleepHours(d.sleep.bed, d.sleep.wake)} h</div><div class="muted small">mood ${d.sleep.mood} / 5</div>` : ''}</div>
   ${isWorkoutDay || doneToday ? `<div class="card"><div class="row between"><div><h2>${doneToday ? 'Workout done ✓' : 'Workout day'}</h2><p class="muted small" style="margin:0">5 moves · 3 sets · ~25 min</p></div>${doneToday ? '' : '<button class="btn sm orange" id="startW">Start</button>'}</div></div>` : ''}
   <div class="card"><h2>Food today</h2><div class="list">${d.food.length ? d.food.map(foodRow).join('') : '<p class="muted small">Nothing yet.</p>'}</div></div>`;
   $('#addFood').onclick = foodSheet;
@@ -192,6 +194,7 @@ function homeView() {
   $('#wMinus').onclick = () => { d.water = Math.max(0, d.water - 1); save(); render(); };
   $('#stepsCard').onclick = stepsSheet;
   $('#weightCard').onclick = weightSheet;
+  $('#sleepCard').onclick = sleepSheet;
   if ($('#startW')) $('#startW').onclick = startWorkout;
   bindFoodRows(t);
 }
@@ -209,8 +212,9 @@ function bindFoodRows(k) {
 function logSheet() {
   openSheet(`<h2>Log</h2><div class="grid2">
     <button class="btn" id="lFood">Food</button><button class="btn" id="lWeight">Weight</button>
-    <button class="btn" id="lWater">+1 water</button><button class="btn" id="lSteps">Steps</button></div>`);
-  $('#lFood').onclick = foodSheet; $('#lWeight').onclick = weightSheet; $('#lSteps').onclick = stepsSheet;
+    <button class="btn" id="lWater">+1 water</button><button class="btn" id="lSteps">Steps</button>
+    <button class="btn" id="lSleep">Sleep &amp; mood</button></div>`);
+  $('#lFood').onclick = foodSheet; $('#lWeight').onclick = weightSheet; $('#lSteps').onclick = stepsSheet; $('#lSleep').onclick = sleepSheet;
   $('#lWater').onclick = () => { day(today()).water++; save(); closeSheet(); render(); toast('Water logged'); };
 }
 function weightSheet() {
@@ -232,6 +236,25 @@ function weightSheet() {
     if (!(k in S.weights)) return $('#wErr').textContent = 'No entry on that date.';
     if (Object.keys(S.weights).length === 1) return $('#wErr').textContent = 'Keep at least one weight.';
     delete S.weights[k]; save(); closeSheet(); render(); toast('Deleted');
+  };
+}
+function sleepSheet() {
+  const s = day(today()).sleep || { bed: '23:00', wake: '07:00', mood: 3 };
+  openSheet(`<h2>Sleep &amp; mood</h2><p class="muted small">Log the night that ended on the wake-up date.</p>
+    <label>Wake-up date</label><input type="date" id="slDate" value="${today()}" max="${today()}">
+    <div class="grid2"><div><label>Sleep time</label><input type="time" id="slBed" value="${s.bed}"></div><div><label>Wake time</label><input type="time" id="slWake" value="${s.wake}"></div></div>
+    <label>Mood (1 = low, 5 = great)</label><div class="row" id="slMood">${[1, 2, 3, 4, 5].map(n => `<button class="btn sm ${n === s.mood ? 'orange' : 'ghost'}" data-m="${n}" aria-pressed="${n === s.mood}">${n}</button>`).join('')}</div>
+    <p id="slErr" class="bad small"></p><button class="btn orange" id="slSave">Save</button>`);
+  let mood = s.mood;
+  document.querySelectorAll('#slMood [data-m]').forEach(b => b.onclick = () => {
+    mood = +b.dataset.m;
+    document.querySelectorAll('#slMood [data-m]').forEach(x => { const on = +x.dataset.m === mood; x.className = `btn sm ${on ? 'orange' : 'ghost'}`; x.setAttribute('aria-pressed', on); });
+  });
+  $('#slSave').onclick = () => {
+    const k = $('#slDate').value, bed = $('#slBed').value, wake = $('#slWake').value;
+    if (!k || k > today()) return $('#slErr').textContent = 'Pick a date up to today.';
+    if (!bed || !wake) return $('#slErr').textContent = 'Enter sleep and wake times.';
+    day(k).sleep = { bed, wake, mood }; save(); closeSheet(); render(); toast(`Sleep saved: ${L.sleepHours(bed, wake)} h`);
   };
 }
 function stepsSheet() {
