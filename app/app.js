@@ -559,7 +559,48 @@ function progressView() {
       <div class="row between"><span>Trend change</span><b>${wr.trendChange === null ? '—' : (wr.trendChange > 0 ? '+' : '') + wr.trendChange + ' kg'}</b></div>
     </div>
     <p class="small muted">${reviewTip(wr, tg)}</p></div>
-  <div class="card"><h2>Weigh-ins</h2><div class="list small">${series.slice(-10).reverse().map(s => `<div class="row between"><span>${fmtDate(s.date)}</span><span>${s.kg} kg <span class="muted">· trend ${s.trend.toFixed(1)}</span></span></div>`).join('')}</div></div>`;
+  <div class="card"><h2>Weigh-ins</h2><div class="list small">${series.slice(-10).reverse().map(s => `<div class="row between"><span>${fmtDate(s.date)}</span><span>${s.kg} kg <span class="muted">· trend ${s.trend.toFixed(1)}</span></span></div>`).join('')}</div></div>
+  ${historyCard(t)}`;
+  bindHistory(t);
+}
+let histDays = 30; // 0 = all time
+function historyFrom(t) {
+  if (histDays) return L.addDays(t, -(histDays - 1));
+  return [...Object.keys(S.days), ...Object.keys(S.weights), ...S.sessions.map(s => s.date)].sort()[0] || t;
+}
+function historyCard(t) {
+  const h = L.periodStats(historyFrom(t), t, S.days, S.weights, S.sessions), a = h.avg;
+  const v = (x, u = '') => x === null ? '—' : x + u;
+  const stat = (label, x) => `<div class="row between"><span>${label}</span><b>${x}</b></div>`;
+  const row = r => `<button class="row between hist-day" data-day="${r.date}" style="all:unset;display:flex;justify-content:space-between;cursor:pointer;width:100%">
+    <b>${fmtDate(r.date)}</b><span class="muted">${[r.kcal !== null && r.kcal + ' kcal', r.steps && r.steps + ' steps', r.water && r.water + ' 💧', r.sleep !== null && r.sleep + ' h', r.kg !== null && r.kg + ' kg', r.workouts && '🏋'].filter(Boolean).join(' · ')}</span></button>`;
+  return `<div class="card"><h2>History</h2>
+    <div class="chips">${[[7, '7 days'], [30, '30 days'], [90, '90 days'], [0, 'All']].map(([n, l]) => `<button class="chip" data-hist="${n}" aria-pressed="${n === histDays}" style="${n === histDays ? 'background:var(--ink);color:#fff' : ''}">${l}</button>`).join('')}</div>
+    <div class="list small" style="margin-top:12px">
+      ${stat('Average kcal', v(a.kcal))}${stat('Average protein', v(a.protein, ' g'))}${stat('Average steps', v(a.steps))}
+      ${stat('Average water', v(a.water, ' glasses'))}${stat('Average sleep', v(a.sleep, ' h'))}${stat('Average mood', v(a.mood, ' / 5'))}
+      ${stat('Workouts', h.workouts)}${stat('Weight change', h.weightChange === null ? '—' : (h.weightChange > 0 ? '+' : '') + h.weightChange + ' kg')}
+    </div>
+    <h3 style="margin-top:16px">Days</h3><div class="list small">${h.rows.map(row).join('') || '<p class="muted">Nothing logged in this period.</p>'}</div></div>`;
+}
+function bindHistory(t) {
+  document.querySelectorAll('[data-hist]').forEach(b => b.onclick = () => { histDays = +b.dataset.hist; render(); });
+  document.querySelectorAll('[data-day]').forEach(b => b.onclick = () => daySheet(b.dataset.day));
+}
+function daySheet(k) {
+  const d = S.days[k] || { food: [] }, sum = L.sumFood(d.food || []);
+  const ws = S.sessions.filter(s => s.date === k);
+  openSheet(`<h2>${new Date(k + 'T12:00').toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+    <div class="list small">
+      <div class="row between"><span>Food</span><b>${Math.round(sum.kcal)} kcal · P ${Math.round(sum.p)} · C ${Math.round(sum.c)} · F ${Math.round(sum.f)}</b></div>
+      <div class="row between"><span>Water</span><b>${d.water || 0} glasses</b></div>
+      <div class="row between"><span>Steps</span><b>${d.steps || '—'}</b></div>
+      <div class="row between"><span>Weight</span><b>${S.weights[k] ?? '—'}${S.weights[k] ? ' kg' : ''}</b></div>
+      <div class="row between"><span>Sleep</span><b>${d.sleep ? `${d.sleep.bed} → ${d.sleep.wake} · ${L.sleepHours(d.sleep.bed, d.sleep.wake)} h · mood ${d.sleep.mood}/5` : '—'}</b></div>
+      <div class="row between"><span>Workout</span><b>${ws.length ? 'Done' : '—'}</b></div>
+    </div>
+    <h3 style="margin-top:16px">Food</h3><div class="list small">${(d.food || []).map(i => `<div><div>${esc(i.name)}</div><div class="muted">${Math.round(i.kcal)} kcal · P ${Math.round(i.p)} · C ${Math.round(i.c)} · F ${Math.round(i.f)}</div></div>`).join('') || '<p class="muted">No food logged.</p>'}</div>
+    ${historyHtml(d)}`);
 }
 function roadmapCard(p, t, tk) {
   const r = L.roadmap(p.start, p.startKg, p.goalKg, p.pace);

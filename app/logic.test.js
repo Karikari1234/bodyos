@@ -165,3 +165,20 @@ test('sleepHours wraps past midnight', () => {
   assert.equal(L.sleepHours('00:30', '06:45'), 6.3);
   assert.equal(L.sleepHours('22:15', '22:15'), 0);
 });
+
+test('periodStats averages logged days only and lists newest first', () => {
+  const days = {
+    '2026-11-01': { food: [{ kcal: 2000, p: 100, c: 0, f: 0 }], water: 6, steps: 8000, sleep: { bed: '23:30', wake: '06:00', mood: 4 } },
+    '2026-11-03': { food: [{ kcal: 1000, p: 50, c: 0, f: 0 }], water: 0, steps: 0, sleep: { bed: '22:00', wake: '06:00', mood: 2 } },
+    '2026-11-04': { food: [], water: 0, steps: 0 },
+    '2026-10-01': { food: [{ kcal: 9999, p: 0, c: 0, f: 0 }], water: 1, steps: 1 },
+  };
+  const r = L.periodStats('2026-11-01', '2026-11-07', days, { '2026-11-01': 82, '2026-11-07': 81.4 }, [{ date: '2026-11-03' }]);
+  assert.deepEqual(r.rows.map(x => x.date), ['2026-11-07', '2026-11-03', '2026-11-01']);
+  assert.equal(r.avg.kcal, 1500);
+  assert.equal(r.avg.water, 6);
+  assert.equal(r.avg.sleep, 7.3);
+  assert.equal(r.avg.mood, 3);
+  assert.equal(r.workouts, 1);
+  assert.equal(r.weightChange, -0.6);
+});

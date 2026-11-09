@@ -245,6 +245,30 @@
     };
   }
 
+  // ---------- history over a period ----------
+  // averages count only days where that thing was logged; rows newest first, only days with any data
+  function periodStats(fromKey, toKey, days, weights, sessions) {
+    const keys = []; for (let k = toKey; k >= fromKey; k = addDays(k, -1)) keys.push(k);
+    const avg = (f) => { const v = keys.map(f).filter(x => x !== null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length * 10) / 10 : null; };
+    const d = k => days[k] || {};
+    const food = k => d(k).food && d(k).food.length ? sumFood(d(k).food) : null;
+    const rows = keys.map(k => ({
+      date: k, kcal: food(k) ? Math.round(food(k).kcal) : null, protein: food(k) ? Math.round(food(k).p) : null,
+      water: d(k).water || null, steps: d(k).steps || null,
+      sleep: d(k).sleep ? sleepHours(d(k).sleep.bed, d(k).sleep.wake) : null, mood: d(k).sleep ? d(k).sleep.mood : null,
+      kg: weights[k] ?? null, workouts: sessions.filter(s => s.date === k).length,
+    })).filter(r => r.kcal !== null || r.water || r.steps || r.sleep !== null || r.kg !== null || r.workouts);
+    const w = keys.filter(k => weights[k] != null);
+    return {
+      rows,
+      avg: { kcal: avg(k => food(k) && Math.round(food(k).kcal)), protein: avg(k => food(k) && Math.round(food(k).p)),
+        water: avg(k => d(k).water || null), steps: avg(k => d(k).steps || null),
+        sleep: avg(k => d(k).sleep ? sleepHours(d(k).sleep.bed, d(k).sleep.wake) : null), mood: avg(k => d(k).sleep ? d(k).sleep.mood : null) },
+      workouts: rows.reduce((a, r) => a + r.workouts, 0),
+      weightChange: w.length > 1 ? Math.round((weights[w[0]] - weights[w[w.length - 1]]) * 10) / 10 : null,
+    };
+  }
+
   // ---------- calendar reminders (.ics) ----------
   // events: [{ title, time:'HH:MM', days:[0..6] or null for daily }]
   function ics(events, startKey) {
@@ -290,7 +314,7 @@
     KCAL_PER_KG, DAYS_PER_MONTH, ACTIVITY, LADDERS, PATTERNS, SETS,
     dayKey, daysBetween, addDays, weekday, bmr, targets, bmi, goalDate, planWeight,
     trend, weeklyRate, streak, nextStepGoal, macroKcal, macroMismatch, sumFood, parseAIFood,
-    progression, weekReview, ics, roadmap, sleepHours,
+    progression, weekReview, ics, roadmap, sleepHours, periodStats,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.L = api;
 })(this);
