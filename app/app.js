@@ -188,7 +188,7 @@ function homeView() {
   <div class="card" id="sleepCard"><div class="row between"><h2>Sleep &amp; mood</h2><span class="muted small">${d.sleep ? `${d.sleep.bed} → ${d.sleep.wake}` : 'tap to log'}</span></div>
     ${d.sleep ? `<div class="big">${L.sleepHours(d.sleep.bed, d.sleep.wake)} h</div><div class="muted small">mood ${d.sleep.mood} / 5</div>` : ''}</div>
   ${isWorkoutDay || doneToday ? `<div class="card"><div class="row between"><div><h2>${doneToday ? 'Workout done ✓' : 'Workout day'}</h2><p class="muted small" style="margin:0">5 moves · 3 sets · ~25 min</p></div>${doneToday ? '' : '<button class="btn sm orange" id="startW">Start</button>'}</div></div>` : ''}
-  <div class="card"><h2>Food today</h2><div class="list">${d.food.length ? d.food.map(foodRow).join('') : '<p class="muted small">Nothing yet.</p>'}</div></div>`;
+  <div class="card"><h2>Food today</h2><div class="list">${d.food.length ? d.food.map(foodRow).join('') : '<p class="muted small">Nothing yet.</p>'}</div>${historyHtml(d)}</div>`;
   $('#addFood').onclick = foodSheet;
   $('#wPlus').onclick = () => { d.water++; save(); render(); };
   $('#wMinus').onclick = () => { d.water = Math.max(0, d.water - 1); save(); render(); };
@@ -199,13 +199,37 @@ function homeView() {
   bindFoodRows(t);
 }
 function foodRow(i) {
-  return `<div class="row between"><div><div>${esc(i.name)}</div><div class="muted small">${Math.round(i.kcal)} kcal · P ${Math.round(i.p)} · C ${Math.round(i.c)} · F ${Math.round(i.f)}${i.ai ? ' · AI' : ''}</div></div><button class="x" data-del="${i.id}" aria-label="Delete">×</button></div>`;
+  return `<div class="row between"><div><div>${esc(i.name)}</div><div class="muted small">${Math.round(i.kcal)} kcal · P ${Math.round(i.p)} · C ${Math.round(i.c)} · F ${Math.round(i.f)}${i.ai ? ' · AI' : ''}</div></div><div class="row"><button class="x" data-edit="${i.id}" aria-label="Edit">✎</button><button class="x" data-del="${i.id}" aria-label="Delete">×</button></div></div>`;
+}
+// edits and deletes need two confirmations
+const sure = msg => confirm(msg) && confirm('Are you sure? This changes your log.');
+const fmtFood = i => `${esc(i.name)} (${Math.round(i.kcal)} kcal)`;
+function logFood(d, op, item, before) { (d.log ||= []).push({ t: Date.now(), op, item: { ...item }, before: before && { ...before } }); }
+function historyHtml(d) {
+  if (!d.log?.length) return '';
+  const time = t => new Date(t).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const line = e => e.op === 'edit' ? `Edited ${fmtFood(e.before)} → ${fmtFood(e.item)}` : `${e.op === 'add' ? 'Added' : 'Deleted'} ${fmtFood(e.item)}`;
+  return `<details style="margin-top:12px"><summary class="muted small">History (${d.log.length})</summary><div class="list small">${d.log.slice().reverse().map(e => `<div><span class="muted">${time(e.t)}</span> ${line(e)}</div>`).join('')}</div></details>`;
+}
+function delFood(k, id) {
+  const d = day(k), i = d.food.find(x => x.id === id);
+  if (!i || !sure(`Delete ${i.name}?`)) return;
+  d.food = d.food.filter(x => x.id !== id); logFood(d, 'delete', i); save(); closeSheet(); render(); toast('Food deleted');
+}
+function editFood(k, id) {
+  const d = day(k), i = d.food.find(x => x.id === id);
+  if (!i) return;
+  openSheet(`<h2>Edit food</h2>${manualForm(i, 'Save')}<button class="btn ghost" id="eDel" style="margin-top:8px">Delete</button>`);
+  $('#eDel').onclick = () => delFood(k, id);
+  bindManual(next => {
+    if (!sure(`Save changes to ${i.name}?`)) return;
+    const before = { ...i };
+    Object.assign(i, next, { ai: false }); logFood(d, 'edit', i, before); save(); closeSheet(); render(); toast('Food updated');
+  });
 }
 function bindFoodRows(k) {
-  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
-    if (!confirm('Delete this food?')) return;
-    day(k).food = day(k).food.filter(i => i.id !== b.dataset.del); save(); render();
-  });
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => delFood(k, b.dataset.del));
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editFood(k, b.dataset.edit));
 }
 
 // ---------- log sheets ----------
@@ -278,7 +302,7 @@ function foodSheet() {
   document.querySelectorAll('[data-meal]').forEach(b => b.onclick = () => { const m = S.meals[b.dataset.meal]; addFood([{ ...m }]); });
   bindManual();
 }
-function manualForm(i) {
+function manualForm(i, label = 'Add') {
   return `<form id="mf"><label>Name</label><input name="name" value="${esc(i.name || '')}" required>
     <div class="grid2"><div><label>kcal</label><input name="kcal" inputmode="decimal" value="${i.kcal ?? ''}"></div>
     <div><label>Protein g</label><input name="p" inputmode="decimal" value="${i.p ?? ''}"></div>
@@ -286,9 +310,9 @@ function manualForm(i) {
     <div><label>Fat g</label><input name="f" inputmode="decimal" value="${i.f ?? ''}"></div></div>
     <p class="muted small">Leave kcal empty to compute it from macros (4/4/9).</p>
     <label style="display:flex;gap:10px;color:var(--ink)"><input type="checkbox" name="keep" style="width:auto"> Save as a meal for next time</label>
-    <p id="mErr" class="bad small"></p><button class="btn">Add</button></form>`;
+    <p id="mErr" class="bad small"></p><button class="btn">${label}</button></form>`;
 }
-function bindManual() {
+function bindManual(done = item => addFood([item])) {
   $('#mf').onsubmit = e => {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(e.target));
@@ -299,12 +323,12 @@ function bindManual() {
     if (L.macroMismatch(kcal, p, c, f) && (p || c || f) && !confirm(`Macros add up to ${Math.round(L.macroKcal(p, c, f))} kcal, not ${kcal}. Save anyway?`)) return;
     const item = { name: d.name.trim().slice(0, 60), kcal: Math.round(kcal), p, c, f };
     if (d.keep) { S.meals = S.meals.filter(m => m.name !== item.name); S.meals.unshift(item); S.meals.length = Math.min(S.meals.length, 30); }
-    addFood([item]);
+    done(item);
   };
 }
 function addFood(items) {
   const d = day(today());
-  items.forEach(i => d.food.push({ id: uid(), name: i.name, kcal: i.kcal, p: i.p, c: i.c, f: i.f, ai: !!i.ai, t: Date.now() }));
+  items.forEach(i => { const f = { id: uid(), name: i.name, kcal: i.kcal, p: i.p, c: i.c, f: i.f, ai: !!i.ai, t: Date.now() }; d.food.push(f); logFood(d, 'add', f); });
   save(); closeSheet(); render(); toast(items.length > 1 ? `${items.length} foods added` : 'Food added');
 }
 
