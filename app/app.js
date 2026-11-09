@@ -6,7 +6,7 @@ const KEY = 'bodyos.v1';
 const DEFAULT = {
   v: 1, profile: null,
   settings: {
-    provider: 'gemini', apiKey: '', model: 'gemini-2.5-flash-lite', base: 'https://openrouter.ai/api/v1',
+    provider: 'gemini', apiKey: '', model: 'gemini-3.5-flash-lite', base: 'https://openrouter.ai/api/v1',
     workoutDays: [1, 4], waterGoal: 8, glassMl: 250, stepGoal: 5000, stepCheck: null,
     remind: { weigh: '07:30', workout: '18:00', water: true },
   },
@@ -16,7 +16,7 @@ let S = load();
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && s.v === 1) return { ...DEFAULT, ...s, settings: { ...DEFAULT.settings, ...s.settings, remind: { ...DEFAULT.settings.remind, ...(s.settings || {}).remind } } };
+    if (s && s.v === 1) { if (/^gemini-(3\.8|2\.5)-flash-lite$/.test(s.settings?.model)) s.settings.model = 'gemini-3.5-flash-lite'; return { ...DEFAULT, ...s, settings: { ...DEFAULT.settings, ...s.settings, remind: { ...DEFAULT.settings.remind, ...(s.settings || {}).remind } } }; }
   } catch (e) { /* fall through to fresh state */ }
   return structuredClone(DEFAULT);
 }
@@ -573,7 +573,7 @@ function meView() {
     <div id="baseRow" ${st.provider === 'gemini' ? 'hidden' : ''}><label>Base URL</label><input id="base" value="${esc(st.base)}" placeholder="https://openrouter.ai/api/v1"></div>
     <label>Model (must support images)</label><input id="model" value="${esc(st.model)}">
     <label>API key</label><input id="key" type="password" value="${esc(st.apiKey)}" autocomplete="off" placeholder="paste key">
-    <p class="muted small">DeepSeek has no image API, so it can’t read photos. Cheapest good options: Gemini 2.5 Flash-Lite (key from aistudio.google.com), or on OpenRouter e.g. google/gemini-2.5-flash-lite.</p>
+    <p class="muted small">DeepSeek has no image API, so it can’t read photos. Cheapest good options: Gemini 3.5 Flash-Lite (key from aistudio.google.com), or on OpenRouter e.g. google/gemini-2.5-flash-lite.</p>
     <button class="btn" id="saveAI">Save</button></div>
   <div class="card"><h2>Reminders</h2>
     <p class="muted small">iPhone web apps can’t schedule alerts on their own, so this adds repeating events with alerts to your Calendar.</p>
@@ -596,7 +596,7 @@ function meView() {
   };
   $('#prov').onchange = e => {
     $('#baseRow').hidden = e.target.value === 'gemini';
-    $('#model').value = e.target.value === 'gemini' ? 'gemini-2.5-flash-lite' : 'google/gemini-2.5-flash-lite';
+    $('#model').value = e.target.value === 'gemini' ? 'gemini-3.5-flash-lite' : 'google/gemini-2.5-flash-lite';
   };
   $('#saveAI').onclick = () => {
     const prov = $('#prov').value, base = $('#base').value.trim();
